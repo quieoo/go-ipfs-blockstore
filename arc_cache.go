@@ -2,11 +2,13 @@ package blockstore
 
 import (
 	"context"
+	"time"
 
 	lru "github.com/hashicorp/golang-lru"
 	blocks "github.com/ipfs/go-block-format"
 	cid "github.com/ipfs/go-cid"
 	metrics "github.com/ipfs/go-metrics-interface"
+	mymetrics "metrics"
 )
 
 type cacheHave bool
@@ -73,6 +75,8 @@ func (b *arccache) hasCached(k cid.Cid) (has bool, size int, ok bool) {
 }
 
 func (b *arccache) Has(k cid.Cid) (bool, error) {
+	s := time.Now()
+	defer mymetrics.DeduplicateOverhead.UpdateSince(s)
 	if has, _, ok := b.hasCached(k); ok {
 		return has, nil
 	}

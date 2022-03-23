@@ -5,8 +5,10 @@ package blockstore
 import (
 	"context"
 	"errors"
+	"metrics"
 	"sync"
 	"sync/atomic"
+	"time"
 
 	blocks "github.com/ipfs/go-block-format"
 	cid "github.com/ipfs/go-cid"
@@ -146,7 +148,9 @@ func (bs *blockstore) Put(block blocks.Block) error {
 	k := dshelp.CidToDsKey(block.Cid())
 
 	// Has is cheaper than Put, so see if we already have it
+	s := time.Now()
 	exists, err := bs.datastore.Has(k)
+	metrics.DeduplicateOverhead.UpdateSince(s)
 	if err == nil && exists {
 		return nil // already stored.
 	}
@@ -160,7 +164,9 @@ func (bs *blockstore) PutMany(blocks []blocks.Block) error {
 	}
 	for _, b := range blocks {
 		k := dshelp.CidToDsKey(b.Cid())
+		s := time.Now()
 		exists, err := bs.datastore.Has(k)
+		metrics.DeduplicateOverhead.UpdateSince(s)
 		if err == nil && exists {
 			continue
 		}
