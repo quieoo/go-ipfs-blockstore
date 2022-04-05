@@ -76,7 +76,11 @@ func (b *arccache) hasCached(k cid.Cid) (has bool, size int, ok bool) {
 
 func (b *arccache) Has(k cid.Cid) (bool, error) {
 	s := time.Now()
-	defer mymetrics.DeduplicateOverhead.UpdateSince(s)
+	defer func() {
+		if mymetrics.CMD_EnableMetrics {
+			mymetrics.DeduplicateOverhead.UpdateSince(s)
+		}
+	}()
 	if has, _, ok := b.hasCached(k); ok {
 		return has, nil
 	}
